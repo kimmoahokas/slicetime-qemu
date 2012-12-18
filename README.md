@@ -2,7 +2,7 @@
 
 This is a QEMU fork which will support use with SliceTime. For more info see [Project SliceTime](http://www.comsys.rwth-aachen.de/research/projects/slicetime/) and [QEMU](http://www.qemu.org).
 
-# Instructions ##
+## Instructions ##
 
 For user instructions you should see documentation in [SliceTime GitHub](https://github.com/mr-kimia/slicetime).
 
