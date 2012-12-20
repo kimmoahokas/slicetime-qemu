@@ -1578,6 +1578,36 @@ STEXI
 show available trace events and their state
 ETEXI
 
+{
+    .name       = "init_sync",
+    .args_type  = "server_address:s,server_port:s,client_port:s,client_id:i",
+    .params     = "server_address server_port client_port client_id",
+    .help       = "init SliceTime sync using server at host:port. Client listens to connections in client_port. client_id must be unique client id. Also stops vm execution.",
+    .mhandler.cmd = do_init_sync,
+},
+
+STEXI
+@item init sync @var{server_address} @var{server_port} @var{client_port] @var{client_id}
+Connect to SliceTime server at @var{server_address}:@var{server_port}.
+Client listens connections in @var{client_port}.
+These variables must match those set in servers configuration.
+@var{client_id) must be unique client id.
+Also stops vm execution.
+ETEXI
+
+{
+    .name       = "stop_sync",
+    .args_type  = "",
+    .params     = "",
+    .help       = "stop SliceTime syncing.",
+    .mhandler.cmd = do_stop_sync,
+},
+
+STEXI
+@item stop_sync
+Stop SliceTime syncing.
+ETEXI
+
 STEXI
 @end table
 ETEXI

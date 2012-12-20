@@ -74,6 +74,9 @@
 #endif
 #include "hw/lm32_pic.h"
 
+#include "slicetime/synchronization.h"
+#include "slicetime/synchronization-qemu.h"
+
 //#define DEBUG
 //#define DEBUG_COMPLETION
 
@@ -1983,6 +1986,29 @@ static void do_acl_remove(Monitor *mon, const QDict *qdict)
         else
             monitor_printf(mon, "acl: removed rule at position %d\n", ret);
     }
+}
+
+
+static void do_init_sync(Monitor *mon, const QDict *qdict)
+{
+    // stop vm, connect to slicetime and start waiting for run command
+    vm_stop(EXCP_INTERRUPT);
+
+    const char *server_address = qdict_get_str(qdict, "server_address");
+    const char *server_port = qdict_get_str(qdict, "server_port");
+    const char *client_port = qdict_get_str(qdict, "client_port");
+    int client_id = qdict_get_int(qdict, "client_id");
+
+    slicetime_init_client(server_address, server_port, client_port, client_id);
+}
+
+static void do_stop_sync(Monitor *mon, const QDict *qdict)
+{
+    slicetime_stop_sync();
+    //do_cont(mon);
+
+    // TODO: not sure if do_cont and monitor_resume are equal
+    monitor_resume(mon);
 }
 
 #if defined(TARGET_I386)
@@ -4790,3 +4816,5 @@ int monitor_read_block_device_key(Monitor *mon, const char *device,
 
     return monitor_read_bdrv_key_start(mon, bs, completion_cb, opaque);
 }
+
+
