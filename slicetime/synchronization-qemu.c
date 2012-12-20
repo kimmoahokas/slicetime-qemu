@@ -31,7 +31,7 @@ uint32_t slice;
 static void slicetime_stop_timer_cb(void* opaque)
 {
     //printf("slicetime timer callback called, stopping vm.\n");
-    vm_stop(0);
+    vm_stop(RUN_STATE_PAUSED);
     vm_running = 0;
     int64_t r_ended = qemu_get_clock_ns(rt_clock);
     r_total += r_ended - r_start_time;
@@ -48,8 +48,10 @@ void slicetime_sock_read_cb(void *opaque) {
 void slicetime_init_client(const char *host, const char *host_port, 
 			  const char *client_port, int client_id)
 {
+printf("Bind the timer");
     ts_stop_timer = qemu_new_timer(vm_clock, SCALE_NS, slicetime_stop_timer_cb, 0);
-    slicetime_initialized = 1;
+printf("Unbind the timer");    
+slicetime_initialized = 1;
     vm_running = 1;
     printf("Init slicetime client\n");
     slicetime_socket = register_client(host, host_port, client_port, client_id,
