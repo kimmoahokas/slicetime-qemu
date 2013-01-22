@@ -23,6 +23,7 @@ int slicetime_client_sock, slicetime_client_id, slicetime_seqNr,
 struct sockaddr_in slicetime_dest;
     
 SliceTime_runfor slicetime_runfor_cb;
+Monitor* monitor;
 
 void setnonblocking(int sock)
 {
@@ -43,7 +44,7 @@ void setnonblocking(int sock)
 
 void print_addr(struct addrinfo *info)
 {
-    printf("IP addresses\n");
+    monitor_printf(monitor, "IP addresses\n");
 
     struct addrinfo *p;
     
@@ -66,7 +67,7 @@ void print_addr(struct addrinfo *info)
 
         // convert the IP to a string and print it:
         inet_ntop(p->ai_family, addr, ipstr, sizeof ipstr);
-        printf("  %s: %s\n", ipver, ipstr);
+        monitor_printf(monitor, "  %s: %s\n", ipver, ipstr);
     }
 }
 
@@ -92,7 +93,7 @@ int get_connection(const char *host, const char *remote_port, const char *local_
         perror("getaddrinfo error:");
         return -1;
     }
-    printf("Getting socket...\n");
+    monitor_printf(monitor, "Getting socket...\n");
     print_addr(host_info);
     // loop through struct addrinfo and bind to first possible socket
     for (tmp = host_info; tmp != NULL; tmp = tmp->ai_next) {
@@ -133,7 +134,7 @@ int get_connection(const char *host, const char *remote_port, const char *local_
         perror("getaddrinfo error:");
         return -1;
     }
-    printf("Connecting socket...\n");
+    monitor_printf(monitor, "Connecting socket...\n");
     print_addr(host_info);
     
     // loop through struct addrinfo and connect to first possible
@@ -148,7 +149,7 @@ int get_connection(const char *host, const char *remote_port, const char *local_
     }
     if(tmp == NULL) {
         //something went wrong while trying to get listening socket
-        printf("Failed to connect socket\n");
+        monitor_printf(monitor, "Failed to connect socket\n");
         return -1;
     }
    
@@ -156,7 +157,7 @@ int get_connection(const char *host, const char *remote_port, const char *local_
     //we don't need addrinfo anymore
     freeaddrinfo(host_info);
     
-    printf("Succesfully connected socket!\n");
+    monitor_printf(monitor, "Succesfully connected socket!\n");
     */
     setnonblocking(sockfd);
     return sockfd;
@@ -186,7 +187,7 @@ void client_sendFinished(COM_Finished fin) {
 
     //free memory
     free(spacket);
-    //printf("Done.");
+    //monitor_printf(monitor, "Done.");
 }
 
 void client_sendRegister(COM_RegisterClient reg) {
@@ -213,7 +214,7 @@ void client_sendRegister(COM_RegisterClient reg) {
 
 	//free memory
 	free(spacket);
-	printf("Done.");
+	monitor_printf(monitor, "Done.");
 }
 
 void client_sendUnregister(COM_UnregisterClient ureg) {
@@ -239,15 +240,16 @@ void client_sendUnregister(COM_UnregisterClient ureg) {
 
 	//free memory
 	free(spacket);
-	printf("Done.\n");
+	monitor_printf(monitor, "Done.\n");
 }
 
-int register_client(const char *host, const char *host_port,
+int register_client(Monitor* mon, const char *host, const char *host_port,
 		    const char *client_port, int client_id, SliceTime_runfor cb)
 {
     slicetime_client_period = -1; //-1 denotes not started
     slicetime_client_id = client_id;
     slicetime_runfor_cb = cb;
+    monitor = mon;
     slicetime_client_sock = get_connection(host, host_port, client_port);
     if (slicetime_client_sock <= 0)
     {
@@ -257,11 +259,11 @@ int register_client(const char *host, const char *host_port,
     COM_RegisterClient reg;
     reg.clientID = htons(slicetime_client_id);
     reg.clientType= CLIENT_TYPE_TEST;
-    sprintf(reg.client_Description, "Android-emulator");
+    sprintf(reg.client_Description, "Qemu-emulator");
 
-    printf("Registering...\n");
+    monitor_printf(monitor, "Registering...\n");
     client_sendRegister(reg);
-    printf("Done!\n");
+    monitor_printf(monitor, "Done!\n");
     return slicetime_client_sock;
 }  
   
@@ -269,7 +271,7 @@ int register_client(const char *host, const char *host_port,
 void period_finished(int virtual_time, int real_time)
 {
     if (slicetime_client_period % 1000 == 0) {
-	printf("Finished period %i\n", slicetime_client_period);
+	monitor_printf(monitor, "Finished period %i\n", slicetime_client_period);
     }
     COM_Finished fin;
     fin.clientId = htons(slicetime_client_id);
@@ -282,15 +284,15 @@ void period_finished(int virtual_time, int real_time)
 
 int unregister_client(int reason)
 {
-    printf("Unregistering client..\n");
+    monitor_printf(monitor, "Unregistering client..\n");
     COM_UnregisterClient ureg;
     ureg.clientID = htons(slicetime_client_id);
     ureg.reason = reason;
     client_sendUnregister(ureg);
 
-    printf("Closing socket. \n");
+    monitor_printf(monitor, "Closing socket. \n");
     close(slicetime_client_sock);
-    printf("stopping client functionality... \n");
+    monitor_printf(monitor, "stopping client functionality... \n");
     return 0;
 }
 
@@ -314,18 +316,18 @@ void handle_socket_read(void) {
     //int rec_seqNr = ntohl(received_packet->seqNr);
     int rec_packetType = received_packet->packetType;
 
-    //printf("Packet Received: type=%i,seqNr=%i\n",rec_packetType,rec_seqNr);
+    //monitor_printf(monitor, "Packet Received: type=%i,seqNr=%i\n",rec_packetType,rec_seqNr);
 
     if (rec_packetType==PACKETTYPE_RUNPERMISSION) {
 	COM_RunPermission *result = (COM_RunPermission*) &(received_packet->data);
 
 	uint32_t runTime = ntohl(result->runTime);
 	int periodId = ntohl(result->periodId);
-	//printf("RunPermission received: runTime=%i,periodId=%i\n",runTime,periodId);
+	//monitor_printf(monitor, "RunPermission received: runTime=%i,periodId=%i\n",runTime,periodId);
 
 	//in the beginning, synchronize to periodId of server
 	if (slicetime_client_period==-1) {
-	    printf("Intial Synchronization: Setting client_period to server period: %i\n",periodId);
+	    monitor_printf(monitor, "Intial Synchronization: Setting client_period to server period: %i\n",periodId);
 	    slicetime_client_period=periodId;
 	    //as this is the initial synchronization step, force received to be true
 	}
@@ -335,7 +337,7 @@ void handle_socket_read(void) {
 
 	slicetime_runfor_cb(runTime);
     } else {
-	printf("Wrong Packet Type. Ignoring\n");
+	monitor_printf(monitor, "Wrong Packet Type. Ignoring\n");
     }
 }
 

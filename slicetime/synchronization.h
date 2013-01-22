@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include "monitor.h"
 
 #include "synchronization-qemu.h"
 /**
@@ -116,7 +117,7 @@ typedef struct COM_SyncPacket {
 	uint8_t data[]; //should contain one of the COM_* Structs �
 } COM_SyncPacket;
 
-int register_client(const char *host, const char *host_port,
+int register_client(Monitor* mon, const char *host, const char *host_port,
 		    const char *client_port, int client_id, SliceTime_runfor cb);
 
 void period_finished(int virtual_time, int real_time);

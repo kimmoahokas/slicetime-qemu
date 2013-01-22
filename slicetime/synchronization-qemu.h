@@ -1,6 +1,8 @@
 #ifndef SYNCHRONIZATION_QEMU_H 
 #define SYNCHRONIZATION_QEMU_H  
 
+#include "monitor.h"
+
 /* 
  * SliceTime synchronization for Android emulator (qemu)
  * Aalto University School of Science
@@ -18,7 +20,7 @@ typedef void(*SliceTime_runfor)(uint32_t);
  * code. It connects emulator to SliceTime synchronization server and return the
  * opened socket.
  */
-void slicetime_init_client(const char *host, const char *host_port, 
+void slicetime_init_client(Monitor *mon, const char *host, const char *host_port, 
 			  const char *client_port, int client_id);
 
 /*
@@ -26,7 +28,7 @@ void slicetime_init_client(const char *host, const char *host_port,
  */
 void slicetime_run_for(uint32_t microseconds);
 
-void slicetime_stop_sync(void);
+void slicetime_stop_sync(Monitor* mon);
 
 void slicetime_sock_read_cb(void*);
 

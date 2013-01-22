@@ -1992,19 +1992,19 @@ static void do_acl_remove(Monitor *mon, const QDict *qdict)
 static void do_init_sync(Monitor *mon, const QDict *qdict)
 {
     // stop vm, connect to slicetime and start waiting for run command
-    vm_stop(EXCP_INTERRUPT);
+    vm_stop(RUN_STATE_PAUSED);
 
     const char *server_address = qdict_get_str(qdict, "server_address");
     const char *server_port = qdict_get_str(qdict, "server_port");
     const char *client_port = qdict_get_str(qdict, "client_port");
     int client_id = qdict_get_int(qdict, "client_id");
 
-    slicetime_init_client(server_address, server_port, client_port, client_id);
+    slicetime_init_client(mon, server_address, server_port, client_port, client_id);
 }
 
 static void do_stop_sync(Monitor *mon, const QDict *qdict)
 {
-    slicetime_stop_sync();
+    slicetime_stop_sync(mon);
     //do_cont(mon);
 
     // TODO: not sure if do_cont and monitor_resume are equal
