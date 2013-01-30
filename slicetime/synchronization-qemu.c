@@ -20,7 +20,7 @@
 struct QEMUTimer *ts_stop_timer;
 int slicetime_initialized = 0;
 int slicetime_socket;
-int vm_running = 0;
+int vm_running = 1;
 int64_t r_start_time;
 int64_t v_start_time;
 int64_t r_total = 0;
@@ -34,6 +34,7 @@ static void slicetime_stop_timer_cb(void* opaque)
     //monitor_printf(monitor, "slicetime timer callback called, stopping vm.\n");
     vm_stop(RUN_STATE_PAUSED);
     vm_running = 0;
+
     int64_t r_ended = qemu_get_clock_ns(rt_clock);
     r_total += r_ended - r_start_time;
     int64_t v_ended = qemu_get_clock_ns(vm_clock);
@@ -56,7 +57,9 @@ void slicetime_init_client(Monitor *mon, const char *host, const char *host_port
     monitor_printf(monitor, "Unbind the timer\n");    
 
     slicetime_initialized = 1;
-    vm_running = 1;
+    vm_running = 0;
+    vm_stop(RUN_STATE_PAUSED);
+
     monitor_printf(monitor, "Init slicetime client\n");
 
     slicetime_socket = register_client(monitor, host, host_port, client_port, client_id,
@@ -77,7 +80,7 @@ void slicetime_init_client(Monitor *mon, const char *host, const char *host_port
  */
 void slicetime_run_for(uint32_t microseconds)
 {
-    //printf("slicetime_run_for called, time: %u\n", microseconds);
+    //monitor_printf(monitor, "slicetime_run_for called, time: %u\n", microseconds);
     if (!slicetime_initialized)
     {
     	monitor_printf(monitor, "SliceTime not initialized!\n");
@@ -88,8 +91,11 @@ void slicetime_run_for(uint32_t microseconds)
     v_start_time = qemu_get_clock_ns(vm_clock);
     //TODO: Figure out correct scaling for end time. Propably depends on cpu etc.
     int64_t v_end_time = v_start_time + (int64_t)microseconds * SCALE_US;
+
+    //monitor_printf(monitor, "Calculated start_time: %ld, end_time: %ld.\n", v_start_time, v_end_time);
     
     qemu_mod_timer(ts_stop_timer, v_end_time);
+    //monitor_printf(monitor, "Timer set\n");
     if (!vm_running)
     {
        vm_running = 1;
@@ -115,7 +121,11 @@ void slicetime_stop_sync(Monitor* mon)
     unregister_client(0);
     qemu_free_timer(ts_stop_timer);
     slicetime_initialized = 0;
-    vm_running = 0;
+
+    monitor_printf(monitor, "Trying to resume the VM\n");
+    vm_running = 1;
+    vm_start();
+    monitor_printf(monitor, "Successfully resumed the VM\n");
 }
 
 

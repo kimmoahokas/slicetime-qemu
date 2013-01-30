@@ -2008,7 +2008,7 @@ static void do_stop_sync(Monitor *mon, const QDict *qdict)
     //do_cont(mon);
 
     // TODO: not sure if do_cont and monitor_resume are equal
-    monitor_resume(mon);
+    //monitor_resume(mon);
 }
 
 #if defined(TARGET_I386)

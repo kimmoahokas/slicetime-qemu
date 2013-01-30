@@ -160,6 +160,8 @@ int get_connection(const char *host, const char *remote_port, const char *local_
     monitor_printf(monitor, "Succesfully connected socket!\n");
     */
     setnonblocking(sockfd);
+
+    monitor_printf(monitor, "Succesfully connected socket!\n");
     return sockfd;
 }
 
@@ -214,7 +216,7 @@ void client_sendRegister(COM_RegisterClient reg) {
 
 	//free memory
 	free(spacket);
-	monitor_printf(monitor, "Done.");
+	monitor_printf(monitor, "Done sending the registration.\n");
 }
 
 void client_sendUnregister(COM_UnregisterClient ureg) {
@@ -263,7 +265,7 @@ int register_client(Monitor* mon, const char *host, const char *host_port,
 
     monitor_printf(monitor, "Registering...\n");
     client_sendRegister(reg);
-    monitor_printf(monitor, "Done!\n");
+    monitor_printf(monitor, "Done !\n");
     return slicetime_client_sock;
 }  
   
